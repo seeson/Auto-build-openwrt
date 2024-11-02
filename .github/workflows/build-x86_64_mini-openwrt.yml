@@ -1,4 +1,4 @@
-name: Build X86_64 OpenWrt
+name: Build X86_64_mini OpenWrt
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
-  CONFIG_FILE: configs/x86_64.config
+  CONFIG_FILE: configs/x86_64_mini.config
   CLASH_KERNEL: amd64
   CACHE_TOOLCHAIN: true
   UPLOAD_BIN_DIR: false
@@ -31,7 +31,7 @@ jobs:
 
     env:
       DIY_SCRIPT: diy-${{ matrix.version }}.sh
-      FIRMWARE_TAG: X86_64_${{ matrix.version }}
+      FIRMWARE_TAG: X86_64_mini_${{ matrix.version }}
 
     steps:
     - name: Check Server Performance
