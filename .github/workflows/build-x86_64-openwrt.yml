@@ -161,7 +161,6 @@ jobs:
         elif [ ${{ matrix.version }} == 23.05 ]; then
           echo "IP_ADDRESS=$(cat package/base-files/luci2/bin/config_generate | grep 'lan)' | cut -d '"' -f2)" >> $GITHUB_ENV
         fi
-        echo "status=success" >> $GITHUB_OUTPUT
         echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
 
@@ -170,14 +169,14 @@ jobs:
       run: df -hT
 
     - name: Upload Bin Directory
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      if: steps.compile.conclusion == 'success' && env.UPLOAD_BIN_DIR == 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.OPENWRT_PATH }}/bin
 
     - name: Organize Files
-      if: steps.compile.outputs.status == 'success'
+      if: steps.compile.conclusion == 'success'
       run: |
         cd $OPENWRT_PATH/bin/targets/*/*
         cat config.buildinfo
@@ -189,14 +188,14 @@ jobs:
         echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
     - name: Upload Firmware To Artifact
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE != 'true'
+      if: steps.compile.conclusion == 'success' && env.UPLOAD_RELEASE != 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE_PATH }}
 
     - name: Upload Firmware To Release
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true'
+      if: steps.compile.conclusion == 'success' && env.UPLOAD_RELEASE == 'true'
       uses: ncipollo/release-action@main
       with:
         name: R${{ env.DATE }} for ${{ env.RELEASE_TAG }}
