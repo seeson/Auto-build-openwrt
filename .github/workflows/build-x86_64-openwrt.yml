@@ -18,16 +18,14 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
-  Build:
+  build:
     runs-on: ubuntu-22.04
     if: github.event.repository.owner.id == github.event.sender.id || ! github.event.sender.id
-    name: Build for ${{ matrix.version }}
+    name: build for ${{ matrix.version }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - version: 18.06
-        - version: 23.05
+        version: [18.06, 23.05]
 
     env:
       DIY_SCRIPT: diy-${{ matrix.version }}.sh
@@ -74,8 +72,8 @@ jobs:
         sudo fallocate -l $ROOT_SIZE /root.img
         ROOT_NAME=$(sudo losetup -Pf --show /root.img)
         sudo pvcreate -f $ROOT_NAME
-        sudo vgcreate Actions $MNT_NAME $ROOT_NAME
-        sudo lvcreate -n disk -l 100%FREE Actions
+        sudo vgcreate actions $MNT_NAME $ROOT_NAME
+        sudo lvcreate -n disk -l 100%FREE actions
         LV_NAME=$(sudo lvscan | awk -F "'" '{print $2}')
         sudo mkfs.btrfs -L combinedisk $LV_NAME
         sudo mount -o compress=zstd $LV_NAME $GITHUB_WORKSPACE
@@ -161,7 +159,6 @@ jobs:
         elif [ ${{ matrix.version }} == 23.05 ]; then
           echo "IP_ADDRESS=$(cat package/base-files/luci2/bin/config_generate | grep 'lan)' | cut -d '"' -f2)" >> $GITHUB_ENV
         fi
-        echo "status=success" >> $GITHUB_OUTPUT
         echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
 
@@ -170,14 +167,14 @@ jobs:
       run: df -hT
 
     - name: Upload Bin Directory
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+      if: steps.compile.conclusion == 'success' && env.UPLOAD_BIN_DIR == 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE_REPO }}-bin-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.OPENWRT_PATH }}/bin
 
     - name: Organize Files
-      if: steps.compile.outputs.status == 'success'
+      if: steps.compile.conclusion == 'success'
       run: |
         cd $OPENWRT_PATH/bin/targets/*/*
         cat config.buildinfo
@@ -189,14 +186,14 @@ jobs:
         echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
 
     - name: Upload Firmware To Artifact
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE != 'true'
+      if: steps.compile.conclusion == 'success' && env.UPLOAD_RELEASE != 'true'
       uses: actions/upload-artifact@main
       with:
         name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE_PATH }}
 
     - name: Upload Firmware To Release
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true'
+      if: steps.compile.conclusion == 'success' && env.UPLOAD_RELEASE == 'true'
       uses: ncipollo/release-action@main
       with:
         name: R${{ env.DATE }} for ${{ env.RELEASE_TAG }}
