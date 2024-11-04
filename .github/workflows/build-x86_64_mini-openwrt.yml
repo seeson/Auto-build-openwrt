@@ -1,4 +1,4 @@
-name: Build X86_64 OpenWrt
+name: Build X86_64_mini OpenWrt
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
-  CONFIG_FILE: configs/x86_64.config
+  CONFIG_FILE: configs/x86_64_mini.config
   CLASH_KERNEL: amd64
   CACHE_TOOLCHAIN: true
   UPLOAD_BIN_DIR: false
@@ -28,8 +28,8 @@ jobs:
         version: [18.06, 23.05]
 
     env:
-      DIY_SCRIPT: diy-script-${{ matrix.version }}.sh
-      RELEASE_TAG: X86_64_${{ matrix.version }}
+      DIY_SCRIPT: diy-${{ matrix.version }}.sh
+      RELEASE_TAG: X86_64_mini_${{ matrix.version }}
 
     steps:
     - name: Check Server Performance
@@ -204,6 +204,7 @@ jobs:
         body: |
           **This is OpenWrt Firmware for ${{ env.RELEASE_TAG }}**
           ### 📒 固件信息
+          - 🚀 x86_64 精简版，主打科学上网适合养老
           - 💻 平台架构: ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
           - ⚽ 固件源码: ${{ env.REPO_URL }}
           - 💝 源码分支: ${{ env.REPO_BRANCH }}
