@@ -13,7 +13,12 @@ on:
       openwrt_board:
         description: "设置设备(CPU)型号"
         required: false
-        default: "s905d"
+        default: "s905d_s905x3"
+
+      customize_rk3399:
+        description: "设置 rk3399 设备(设备型号:dtb名称)"
+        required: false
+        default: ""
 
       openwrt_kernel:
         description: "选择内核版本"
@@ -21,12 +26,6 @@ on:
         default: "6.1.y_6.6.y"
         type: choice
         options: [5.4.y, 5.10.y, 5.15.y, 6.1.y, 6.6.y, 6.1.y_6.6.y, 5.15.y_5.10.y]
-
-      auto_kernel:
-        description: "自动使用最新内核"
-        required: false
-        default: true
-        type: boolean
 
       kernel_repo:
         description: "选择内核存储库"
@@ -46,30 +45,44 @@ on:
         description: "设置固件构建者签名"
         required: false
         default: "flippy"
-        type: choice
-        options: [flippy, ophub]
+
+      auto_kernel:
+        description: "自动使用最新内核"
+        required: false
+        default: true
+        type: boolean
+
+      upload_artifact:
+        description: "上传固件到 Artifact"
+        required: false
+        default: false
+        type: boolean
+
+      upload_release:
+        description: "上传固件到 Releases"
+        required: false
+        default: true
+        type: boolean
 
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
-  CONFIG_FILE: configs/armv8.config
-  UPLOAD_ARTIFACT: false
-  UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
 jobs:
   package:
     runs-on: ubuntu-22.04
     if: github.event.repository.owner.id == github.event.sender.id || ! github.event.sender.id
-    name: packaging ${{ matrix.repo }} ${{ matrix.branch }}
+    name: packaging ${{ matrix.target }} ${{ matrix.branch }}
     strategy:
       fail-fast: false
       matrix:
-        repo: [lede]
+        target: [armv8]
         branch: [18.06, 23.05]
 
     env:
-      RELEASE_TAG: ARMv8-${{ matrix.branch }}
+      CONFIG_FILE: configs/${{ matrix.target }}.config
+      RELEASE_TAG: ${{ matrix.target }}-${{ matrix.branch }}
 
     steps:
     - name: Checkout
@@ -113,6 +126,9 @@ jobs:
         echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
         DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
         echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
+        KERNEL=$(grep -oP 'KERNEL_PATCHVER:=\K[^ ]+' target/linux/$DEVICE_TARGET/Makefile)
+        KERNEL_VERSION=$(sed -n 2p include/kernel-$KERNEL | awk -F '-' '{print $2}' | awk -F ' ' '{print $1}')
+        echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
 
     - name: Download OpenWrt Firmware
       id: download
@@ -126,59 +142,64 @@ jobs:
         wget -q https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/packages.tar.gz
         echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
         echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
+        if [ ${{ matrix.branch }} == '23.05' ]; then
+          echo "REPO_BRANCH=openwrt-23.05" >> $GITHUB_ENV
+        fi
 
     - name: Use Flippy Script Packaging
-      if: steps.download.conclusion == 'success' && inputs.script_repo == 'flippy'
+      if: steps.download.conclusion == 'success' && github.event.inputs.script_repo == 'flippy'
       uses: haiibo/flippy-openwrt-actions@main
       env:
         OPENWRT_ARMVIRT: openwrt/bin/targets/*/*/*rootfs.tar.gz
-        KERNEL_REPO_URL: ${{ inputs.kernel_repo }}
-        KERNEL_USAGE: ${{ inputs.kernel_usage }}
-        PACKAGE_SOC: ${{ inputs.openwrt_board }}
-        KERNEL_VERSION_NAME: ${{ inputs.openwrt_kernel }}
-        KERNEL_AUTO_LATEST: ${{ inputs.auto_kernel }}
+        KERNEL_REPO_URL: ${{ github.event.inputs.kernel_repo }}
+        KERNEL_USAGE: ${{ github.event.inputs.kernel_usage }}
+        PACKAGE_SOC: ${{ github.event.inputs.openwrt_board }}
+        KERNEL_VERSION_NAME: ${{ github.event.inputs.openwrt_kernel }}
+        KERNEL_AUTO_LATEST: ${{ github.event.inputs.auto_kernel }}
+        WHOAMI: ${{ github.event.inputs.builder_name }}
+        CUSTOMIZE_RK3399: ${{ github.event.inputs.customize_rk3399 }}
 
     - name: Use Ophub Script Packaging
-      if: steps.download.conclusion == 'success' && inputs.script_repo == 'ophub'
+      if: steps.download.conclusion == 'success' && github.event.inputs.script_repo == 'ophub'
       uses: ophub/amlogic-s9xxx-openwrt@main
       with:
         openwrt_path: openwrt/bin/targets/*/*/*rootfs.tar.gz
-        openwrt_board: ${{ inputs.openwrt_board }}
-        openwrt_kernel: ${{ inputs.openwrt_kernel }}
-        auto_kernel: ${{ inputs.auto_kernel }}
-        kernel_repo: ${{ inputs.kernel_repo }}
-        kernel_usage: ${{ inputs.kernel_usage }}
-        builder_name: ${{ inputs.builder_name }}
+        openwrt_board: ${{ github.event.inputs.openwrt_board }}
+        openwrt_kernel: ${{ github.event.inputs.openwrt_kernel }}
+        auto_kernel: ${{ github.event.inputs.auto_kernel }}
+        kernel_repo: ${{ github.event.inputs.kernel_repo }}
+        kernel_usage: ${{ github.event.inputs.kernel_usage }}
+        builder_name: ${{ github.event.inputs.builder_name }}
 
     - name: Organize Files
       if: env.PACKAGED_STATUS == 'success'
       run: |
         cd $PACKAGED_OUTPUTPATH
-        rm -f *rootfs.tar.gz*
+        rm -f *rootfs.tar.gz *.sha
 
     - name: Upload OpenWrt To Artifact
-      if: env.PACKAGED_STATUS == 'success' && env.UPLOAD_ARTIFACT == 'true'
-      uses: kittaakos/upload-artifact-as-is@master
+      if: env.PACKAGED_STATUS == 'success' && github.event.inputs.upload_artifact == 'true'
+      uses: haiibo/upload-artifact-as-is@master
       with:
         path: ${{ env.PACKAGED_OUTPUTPATH }}
 
     - name: Upload OpenWrt To Release
-      if: env.PACKAGED_STATUS == 'success' && env.UPLOAD_RELEASE == 'true'
+      if: env.PACKAGED_STATUS == 'success' && github.event.inputs.upload_release == 'true'
       uses: ncipollo/release-action@main
       with:
-        name: ${{ env.DATE }} for ${{ env.RELEASE_TAG }}
+        name: ${{ env.DATE }} for ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
         allowUpdates: true
         removeArtifacts: true
         tag: ${{ env.RELEASE_TAG }}
         token: ${{ secrets.GITHUB_TOKEN }}
         artifacts: ${{ env.FIRMWARE_PATH }}/*,${{ env.PACKAGED_OUTPUTPATH }}/*
         body: |
-          **This is OpenWrt Firmware for Armvirt 64**
+          **This is OpenWrt Firmware for ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}**
           ### 📒 固件信息
-          - 🚀 ARMv8 精简版，主打科学上网适合养老
           - 💻 平台架构: ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
           - ⚽ 固件源码: ${{ env.REPO_URL }}
           - 💝 源码分支: ${{ env.REPO_BRANCH }}
+          - 🚀 内核版本: ${{ env.KERNEL_VERSION }}
           - 🌐 默认地址: 192.168.1.2
           - 🔑 默认密码: password
           ### 🧊 固件版本
