@@ -19,9 +19,7 @@ rm -rf feeds/packages/net/msd_lite
 rm -rf feeds/packages/net/smartdns
 rm -rf feeds/luci/themes/luci-theme-argon
 rm -rf feeds/luci/applications/luci-app-mosdns
-rm -rf feeds/luci/themes/luci-theme-netgear
 rm -rf feeds/luci/applications/luci-app-netdata
-rm -rf feeds/luci/applications/luci-app-serverchan
 
 # Git稀疏克隆，只克隆指定目录到本地
 function git_sparse_clone() {
@@ -35,7 +33,7 @@ function git_sparse_clone() {
 }
 
 # 添加额外插件
-git clone --depth=1 https://github.com/kongfl888/luci-app-adguardhome package/luci-app-adguardhome
+# git clone --depth=1 https://github.com/kongfl888/luci-app-adguardhome package/luci-app-adguardhome
 git clone --depth=1 -b openwrt-18.06 https://github.com/tty228/luci-app-wechatpush package/luci-app-serverchan
 git clone --depth=1 https://github.com/ilxp/luci-app-ikoolproxy package/luci-app-ikoolproxy
 git clone --depth=1 https://github.com/esirplayground/luci-app-poweroff package/luci-app-poweroff
@@ -56,7 +54,7 @@ git clone --depth=1 -b 18.06 https://github.com/kiddin9/luci-theme-edge package/
 git clone --depth=1 -b 18.06 https://github.com/jerrykuku/luci-theme-argon package/luci-theme-argon
 git clone --depth=1 https://github.com/jerrykuku/luci-app-argon-config package/luci-app-argon-config
 git clone --depth=1 https://github.com/xiaoqingfengATGH/luci-theme-infinityfreedom package/luci-theme-infinityfreedom
-git_sparse_clone main https://github.com/haiibo/packages luci-theme-atmaterial luci-theme-opentomcat luci-theme-netgear
+git_sparse_clone main https://github.com/haiibo/packages luci-theme-opentomcat
 
 # 更改 Argon 主题背景
 cp -f $GITHUB_WORKSPACE/images/bg1.jpg package/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
@@ -82,8 +80,8 @@ git clone --depth=1 -b v5-lua https://github.com/sbwml/luci-app-mosdns package/l
 git clone --depth=1 -b lua https://github.com/sbwml/luci-app-alist package/luci-app-alist
 
 # DDNS.to
-#git_sparse_clone main https://github.com/linkease/nas-packages-luci luci/luci-app-ddnsto
-#git_sparse_clone master https://github.com/linkease/nas-packages network/services/ddnsto
+# git_sparse_clone main https://github.com/linkease/nas-packages-luci luci/luci-app-ddnsto
+# git_sparse_clone master https://github.com/linkease/nas-packages network/services/ddnsto
 
 # Golang
 git clone --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang

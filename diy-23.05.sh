@@ -20,6 +20,7 @@ rm -rf feeds/luci/themes/luci-theme-argon
 rm -rf feeds/luci/applications/luci-app-passwall
 rm -rf feeds/luci/applications/luci-app-openclash
 rm -rf feeds/luci/applications/luci-app-alist
+# rm -rf feeds/luci/applications/luci-app-netdata
 
 # Git稀疏克隆，只克隆指定目录到本地
 function git_sparse_clone() {
@@ -33,7 +34,8 @@ function git_sparse_clone() {
 }
 
 # 添加额外插件
-git_sparse_clone openwrt-23.05 https://github.com/coolsnowwolf/luci applications/luci-app-adguardhome
+# git_sparse_clone openwrt-23.05 https://github.com/coolsnowwolf/luci applications/luci-app-adguardhome
+# git clone --depth=1 https://github.com/Jason6111/luci-app-netdata package/luci-app-netdata
 
 # 科学上网插件
 git clone --depth=1 https://github.com/fw876/helloworld package/luci-app-ssr-plus
@@ -78,6 +80,10 @@ chmod 755 package/luci-app-onliner/root/usr/share/onliner/setnlbw.sh
 # Wrtbwmon
 git_sparse_clone master https://github.com/brvphoenix/luci-app-wrtbwmon luci-app-wrtbwmon
 git_sparse_clone master https://github.com/brvphoenix/wrtbwmon wrtbwmon
+
+# x86 型号只显示 CPU 型号
+# sed -i 's/${g}.*/${a}${b}${c}${d}${e}${f}${hydrid}/g' package/lean/autocore/files/x86/autocore
+# sed -i "s/'C'/'Core '/g; s/'T '/'Thread '/g" package/lean/autocore/files/x86/autocore
 
 # 取消主题默认设置
 find package/luci-theme-*/ -type f -name '*luci-theme-*' -print -exec sed -i '/set luci.main.mediaurlbase/d' {} \;

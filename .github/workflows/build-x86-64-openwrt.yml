@@ -1,4 +1,4 @@
-name: build x86/64 openwrt
+name: build x86/64-mini openwrt
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     if: github.event.repository.owner.id == github.event.sender.id || ! github.event.sender.id
-    name: build ${{ matrix.target }} ${{ matrix.branch }}
+    name: build ${{ matrix.target }} ${{ matrix.branch }} mini
     strategy:
       fail-fast: false
       matrix:
@@ -27,9 +27,9 @@ jobs:
         branch: [18.06, 23.05]
 
     env:
-      CONFIG_FILE: configs/${{ matrix.target }}-max.config
-      DIY_SCRIPT: diy-script-${{ matrix.branch }}.sh
-      RELEASE_TAG: ${{ matrix.target }}-${{ matrix.branch }}
+      CONFIG_FILE: configs/${{ matrix.target }}.config
+      DIY_SCRIPT: diy-${{ matrix.branch }}.sh
+      RELEASE_TAG: ${{ matrix.target }}-mini-${{ matrix.branch }}
 
     steps:
     - name: Checkout
@@ -217,6 +217,7 @@ jobs:
         body: |
           **This is OpenWrt Firmware for ${{ env.RELEASE_TAG }}**
           ### 📒 固件信息
+          - 🚀 x86-64 精简版，主打科学上网适合养老
           - 💻 平台架构: ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
           - ⚽ 固件源码: ${{ env.REPO_URL }}
           - 💝 源码分支: ${{ env.REPO_BRANCH }}
