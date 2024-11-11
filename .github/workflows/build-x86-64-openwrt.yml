@@ -208,7 +208,7 @@ jobs:
       if: steps.compile.conclusion == 'success' && env.UPLOAD_RELEASE == 'true'
       uses: ncipollo/release-action@main
       with:
-        name: R${{ env.DATE }} for ${{ env.RELEASE_TAG }}**
+        name: R${{ env.DATE }} for ${{ env.RELEASE_TAG }}
         allowUpdates: true
         removeArtifacts: true
         tag: ${{ env.RELEASE_TAG }}
