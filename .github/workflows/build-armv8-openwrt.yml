@@ -3,7 +3,7 @@ name: build armv8 openwrt
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 14 * * *
+    - cron: 30 14 * * *
   watch:
     types: started
 
@@ -171,7 +171,7 @@ jobs:
         cp $GITHUB_WORKSPACE/scripts/init-settings.sh files/etc/uci-defaults/99-init-settings
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
-        DEFAULT_IP=$(grep 'n) ipad' package/base-files/files/bin/config_generate | cut -d '"' -f2)
+        DEFAULT_IP=$(cat package/base-files/files/bin/config_generate | grep 'n) ipad' | cut -d '"' -f2)
         echo "DEFAULT_IP=$DEFAULT_IP" >> $GITHUB_ENV
         echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y.%m.%d")" >> $GITHUB_ENV
