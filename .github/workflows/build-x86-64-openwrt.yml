@@ -215,7 +215,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         artifacts: ${{ env.FIRMWARE_PATH }}/*
         body: |
-          **This is OpenWrt Firmware for ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}**
+          **This is OpenWrt Firmware for ${{ env.RELEASE_TAG }}**
           ### 📒 固件信息
           - 🚀 x86-64 精简版，主打科学上网适合养老
           - 💻 平台架构: ${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
